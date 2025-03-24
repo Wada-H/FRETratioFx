@@ -1,0 +1,122 @@
+FRETratioFx ver.20240913
+
+まず、2チャンネルの画像(例えば1ch: CFP, 2ch: YFP)を用意し、ImageJでHyperStackとして開く。
+この時、Z軸やT軸についても同時に開いて構わず、全ての軸において2チャンネル間の計算をする。
+プラグインを起動し、チェックボックスや計算方法の選択をしてCalcボタンを押す。
+
+Checkbox
+	AutoCutB
+		true : Methodの方法で算出された値を画像からひく。また、Ext.valueに設定している値を掛け算して調整が可能。
+	
+		Method
+			Ave : 輝度の平均値を算出
+			Mod : 輝度の最頻出値を算出
+		
+		Ex.value
+			算出された値に掛け合わす値を入力(デフォルト値: 1.0)
+			
+	Subtract background from self slice
+		true : 画像毎に上記AutoCutBを行う
+		false : 最初の画像で算出された値を用いて全ての画像から差し引く
+		
+
+	AutoEnhance
+		true : 最初の画像の平均輝度になるような値を各画像に掛け合わせる。
+		*この機能は褪色を考慮したものであるが、時間経過におけるバックグラウンドの揺らぎを解消できる可能性がある。
+
+SelsectBox
+	Obtain (divide 100 <=) then ch2 / (ch1 + ch2) * bitMaxValue
+		輝度値が bit数に応じた最大値 / 100 の値であれば、ratio値を0とする。例 8bit画像であれば 255/100 = 2.55であり、この場合 3　より小さい数値は 0　とする。
+		その後、ch2 / (ch1 + ch2) * bit数に応じた最大値の計算を行い画像を作る。
+
+	ch2 / ch1 * 100 * exValue
+		この計算で求めた値を持った画像を作る。
+		
+		Extend value : 適当な値を入れて画像の輝度を調整するための項目
+
+	Like IMD (should set Lut ‘LIMD’)
+		8bitのIMD形式の画像を作る。
+		計算式は Ch2 / Ch1
+		この画像にはLIMDのLUTを適応する必要がある。
+		*IMD : 算出されたratioを8色に分け、各色の輝度を32段階に分けた画像。
+		
+		Min ratio : 最小値として扱う値を入力する。default 0.25
+		Max ratio : 最大値として扱う値を入力する。default 1.0
+	
+	IMDwithHSB
+		IMD形式の考えをHSBで表現したもの。
+		ratioの色分けを無段階(purpul-red, 0.25-1.0)として表現し、輝度についてもSaturation, Brighnessの値より無段階(0.0-1.0)として表現する。
+		
+		Auto : 計算した画像シリーズ内で一番低い値(min ratio)と高い値(max ratio)を算出し、それを利用して色分け時の最小値、最大値とする。
+		Manual : Min, Maxに指定した値を最大値、最小値として色を表現し、それより低い値、高い値は最小値、最大値と同様の色表現をとる。
+			Min : 最小値として扱う値を入力する。default 0.0
+			Max : 最大値として扱う値を入力する。default 1.0
+			C : 色の段階分けを指定する。8を指定すると、8色分けとなり従来のIMDと同等の色分けとなる。
+
+Button
+	Projection
+		表示している画像をZprojection(Max intensity)する。
+	Clear
+		最初に開いた画像に戻す。
+	Calc
+		上記設定の計算を行った画像を作る。
+
+
+
+
+
+
+First, prepare a 2-channel image (e.g., Channel 1: CFP, Channel 2: YFP) and open it in ImageJ as a HyperStack.
+At this stage, having Z or T dimensions is not an issue. Calculations will be performed for each Z and T individually.
+Select a few checkboxes, choose the calculation method, and press the "Calc" button.
+
+Checkbox
+	AutoCutB
+		The background is subtracted from each image according to the specified method.
+	
+		Method
+			Ave : Using the average value.
+			Mod : Using the mode value.
+		
+		Ex.value
+			Multiply the calculated value by this factor according to the specified method.
+		
+	Subtract background from self slice
+		true: Perform the above-mentioned AutoCutB for each image individually.
+		false: Use the value calculated from the first image and subtract it from all images.
+
+
+	AutoEnhance
+		true: Multiply each image by a value such that the average brightness of the first image is maintained.
+		*This function considers fading but may also help eliminate background fluctuations over time.
+
+SelsectBox
+	Obtain (divide 100 <=) then ch2 / (ch1 + ch2) * bitMaxValue
+		Perform the calculation of ch2 / (ch1 + ch2) * bitMaxValue.
+		If the brightness of both images is less than bitMaxValue/100, the ratio is set to 0. For example, for an 8-bit image, 255/100 = 2.55 → If the value is less than 3, the calculated raito is set to 0.
+
+	ch2 / ch1 * 100 * exValue
+		Create an image by dividing ch2 by ch1, multiplying by 100, and then adjusting the brightness further by multiplying by an exValue.
+
+	Like IMD (should set Lut ‘LIMD’)
+		Create an 8-bit image in IMD format. 
+		To correctly represent this image, the LUT should be set to LIMD.
+		*IMD : A method to divide the ratio between Min-Max into 8 colors, further expressing the brightness in 32 gradations.
+		
+		Min ratio: Enter the value to be treated as the minimum. Default is 0.25.
+		Max ratio: Enter the value to be treated as the maximum. Default is 1.0.
+
+	IMDwithHSB
+		A method to express the IMD format in HSB. The ratio is expressed in a continuous scale in HSB’s Hue (purple-red, 0.25-1.0) between Min-Max.
+		Brightness is expressed in a continuous scale for Saturation and Brightness in HSB, based on the proportion to the maximum brightness in that series (0.0-1.0).
+
+		Auto : Use the minimum and maximum ratio of that series.
+		Manual : Set an arbitrary range as the maximum and minimum ratio values. Ratios outside this range are expressed as the minimum or maximum.
+		C : Although the Hue is divided continuously, this value determines the division. For example, to divide into 8 colors, set it to 8.
+	
+
+Button
+	Projection: Perform a Z-projection (Max intensity) on the displayed image.
+	Clear: Return to the originally opened image.
+	Calc: Create an image based on the calculations performed with the above settings.
+
